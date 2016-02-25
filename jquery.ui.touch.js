@@ -27,6 +27,7 @@
 	var lastTap = null;				// Holds last tapped element (so we can compare for double tap)
 	var tapValid = false;			// Are we still in the .6 second window where a double tap can occur
 	var tapTimeout = null;			// The timeout reference
+	var mousedownTimeout = null;		// scroll delay
 	var rightClickPending = false;	// Is a right click still feasible
 	var rightClickEvent = null;		// the original event
 	var holdTimeout = null;			// timeout reference
@@ -141,16 +142,28 @@
 		var type = "",
 			button = 0; /*left*/
 
-		if (event.touches.length > 1)
-			return;
+		if (event.touches.length == 2) { // two finger, cancel the existing mousedown event
+			if (mousedownTimeout) {
+				window.clearTimeout(mousedownTimeout);
+				mousedownTimeout = null;
+			}
+			return true;
+		} else if (event.touches.length > 1) {
+			return ;
+		}
 
 		switch (event.type) {
 			case "touchstart":
 				if ($(event.changedTouches[0].target).is("select")) {
 					return;
 				}
-				iPadTouchStart(event); /*We need to trigger two events here to support one touch drag and drop*/
-				event.preventDefault();
+				if (!mousedownTimeout) { // delay triggering mousedown event
+					mousedownTimeout = window.setTimeout(function() {
+						mousedownTimeout = null;
+						iPadTouchStart(event); /*We need to trigger two events here to support one touch drag and drop*/
+					}, 50);
+				}
+				//event.preventDefault();
 				return false;
 				break;
 
